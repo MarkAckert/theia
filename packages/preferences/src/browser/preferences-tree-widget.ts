@@ -35,7 +35,8 @@ import {
     TreeProps,
     TreeWidget,
     WidgetManager,
-    PreferenceProvider
+    PreferenceProvider,
+    LabelProvider
 } from '@theia/core/lib/browser';
 import { UserPreferenceProvider } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
@@ -254,6 +255,9 @@ export class PreferencesEditorsContainer extends DockPanel {
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
+
     @inject(PreferenceProvider) @named(PreferenceScope.User)
     protected readonly userPreferenceProvider: UserPreferenceProvider;
 
@@ -313,12 +317,19 @@ export class PreferencesEditorsContainer extends DockPanel {
 
         super.onAfterAttach(msg);
         this.onInitEmitter.fire(undefined);
+        this.toDispose.push(
+            this.labelProvider.onDidChange(() => {
+                // Explicitly update the icon for the user preference editor widget.
+                this.userPreferenceEditorWidget.title.iconClass = this.labelProvider.getIcon(new URI('settings.json'));
+            })
+        );
     }
 
     protected async getUserPreferenceEditorWidget(): Promise<PreferencesEditorWidget> {
         const userPreferenceUri = this.userPreferenceProvider.getConfigUri();
         const userPreferences = await this.editorManager.getOrCreateByUri(userPreferenceUri) as PreferencesEditorWidget;
         userPreferences.title.label = 'User';
+        userPreferences.title.iconClass = this.labelProvider.getIcon(new URI('settings.json'));
         userPreferences.title.caption = `User Preferences: ${await this.getPreferenceEditorCaption(userPreferenceUri)}`;
         userPreferences.scope = PreferenceScope.User;
         return userPreferences;
@@ -344,7 +355,7 @@ export class PreferencesEditorsContainer extends DockPanel {
         if (workspacePreferences) {
             workspacePreferences.title.label = 'Workspace';
             workspacePreferences.title.caption = `Workspace Preferences: ${await this.getPreferenceEditorCaption(workspacePreferenceUri!)}`;
-            workspacePreferences.title.iconClass = 'database-icon medium-yellow file-icon';
+            workspacePreferences.title.iconClass = this.labelProvider.getIcon(new URI('settings.json'));
             workspacePreferences.editor.setLanguage('jsonc');
             workspacePreferences.scope = PreferenceScope.Workspace;
         }
