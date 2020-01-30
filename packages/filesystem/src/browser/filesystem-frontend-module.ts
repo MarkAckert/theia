@@ -27,7 +27,6 @@ import { bindFileSystemPreferences } from './filesystem-preferences';
 import { FileSystemProxyFactory } from './filesystem-proxy-factory';
 import { FileSystemWatcher } from './filesystem-watcher';
 
-
 export default new ContainerModule(bind => {
     bindFileSystemPreferences(bind);
 
